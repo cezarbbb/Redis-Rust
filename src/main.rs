@@ -16,9 +16,12 @@ fn main() {
         match stream {
             Ok(mut stream) => {
                 println!("accepted new connection");
-                let mut buf = vec![0; 100];
-                stream.read(&mut buf).unwrap();
-                stream.write(b"+PONG\r\n");
+                let mut buf = [0; 100];
+                loop {
+                    let cnt = stream.read(&mut buf).unwrap();
+                    if cnt == 0 { break;}
+                    stream.write(b"+PONG\r\n").unwrap();
+                }
             }
             Err(e) => {
                 println!("error: {}", e);
