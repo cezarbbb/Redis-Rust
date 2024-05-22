@@ -1,8 +1,6 @@
 use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
-use std::collections::HashMap;
-
 use crate::storage::Storage;
 mod resp;
 mod storage;

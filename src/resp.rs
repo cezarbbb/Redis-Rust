@@ -15,6 +15,7 @@ impl Value {
         match self {
             Value::SimpleString(s) => format!("+{}\r\n", s),
             Value::BulkString(s) => format!("${}\r\n{}\r\n", s.chars().count(), s),
+            Value::Null => format!("$-1\r\n"),
             _ => panic!("Unsupported value for serialize!"),
         }
     }
