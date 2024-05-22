@@ -1,6 +1,4 @@
-use std::{fmt::format, panic::panic_any};
-
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpStream, stream};
+use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpStream};
 use bytes::BytesMut;
 use anyhow::Result;
 
@@ -34,7 +32,7 @@ impl RespHandler {
         }
     }
     pub async fn read_value(&mut self) -> Result<Option<Value>> {
-        let read_count = self.stream.read(&mut self.buffer).await?;
+        let read_count = self.stream.read_buf(&mut self.buffer).await?;
         if read_count == 0 { return Ok(None);}
         let (v, _) = parse_message(self.buffer.split())?;
         return Ok(Some(v));
