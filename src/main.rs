@@ -2,7 +2,10 @@ use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
 use std::collections::HashMap;
+
+use crate::storage::Storage;
 mod resp;
+mod storage;
 
 #[tokio::main]
 async fn main() {
@@ -34,7 +37,7 @@ async fn handle_conn(stream: TcpStream) {
 
     println!("Start reading loop!");
 
-    let mut storage: HashMap<String, String> = HashMap::new();
+    let mut storage: Storage = Default::default();
 
     loop {
         let value = handler.read_value().await.unwrap();
@@ -46,8 +49,14 @@ async fn handle_conn(stream: TcpStream) {
             match command.as_str() {
                 "PING" => Value::SimpleString("PONG".to_string()),
                 "ECHO" => args.first().unwrap().clone(),
-                "SET" => set(&mut storage, unpack_bulk_str(args[0].clone()).unwrap(), unpack_bulk_str(args[1].clone()).unwrap()),
-                "GET" => get(&storage, unpack_bulk_str(args[0].clone()).unwrap()),
+                "SET" => {
+                    match args.len() {
+                        2 => storage.set(unpack_bulk_str(args[0].clone()).unwrap(), unpack_bulk_str(args[1].clone()).unwrap(), 0),
+                        4 => storage.set(unpack_bulk_str(args[0].clone()).unwrap(), unpack_bulk_str(args[1].clone()).unwrap(), unpack_bulk_str(args[3].clone()).unwrap().parse().unwrap()),
+                        _ => panic!("SET command has invalid params {}", args.len()),
+                    }
+                },
+                "GET" => storage.get(unpack_bulk_str(args[0].clone()).unwrap()),
                 _ => panic!("Can not handle command {}", command),
             }
         } else { break;};
@@ -58,17 +67,17 @@ async fn handle_conn(stream: TcpStream) {
     }
 }
 
-fn set(storage: &mut HashMap<String, String>, key: String, value: String) -> Value {
-    storage.insert(key, value);
-    Value::SimpleString("OK".to_string())
-}
+// fn set(storage: &mut HashMap<String, String>, key: String, value: String) -> Value {
+//     storage.insert(key, value);
+//     Value::SimpleString("OK".to_string())
+// }
 
-fn get(storage: & HashMap<String, String>, key: String) -> Value {
-    match storage.get(& key) {
-        Some(value) => Value::SimpleString(value.clone()),
-        None => Value::Null,
-    }
-}
+// fn get(storage: & HashMap<String, String>, key: String) -> Value {
+//     match storage.get(& key) {
+//         Some(value) => Value::SimpleString(value.clone()),
+//         None => Value::Null,
+//     }
+// }
 
 fn extract_command(value: Value) -> Result<(String, Vec<Value>)> {
     match value {
