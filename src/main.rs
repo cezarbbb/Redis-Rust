@@ -31,6 +31,10 @@ async fn main() {
 
             hand_shake.write_all(b"*1\r\n$4\r\nping\r\n").await.expect("Handshake 1 failed");
 
+            hand_shake.write_all(format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n{}\r\n", cur_port).as_bytes()).await.expect("Handshake 1/2 failed");
+
+            hand_shake.write_all(b"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n").await.expect("Handshake 2/2 failed");
+
             mport
         },
         None => {
@@ -75,6 +79,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
             let (command, args) = extract_command(v).unwrap();
             match command.to_ascii_lowercase().as_str() {
                 "ping" => Value::SimpleString("PONG".to_string()),
+                "replconf" => Value::SimpleString("OK".to_string()),
                 "echo" => args.first().unwrap().clone(),
                 "set" => {
                     match args.len() {
