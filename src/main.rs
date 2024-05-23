@@ -11,7 +11,10 @@ async fn main() {
     println!("Logs from your program will appear here!");
 
     let args = env::args().collect::<Vec<String>>();
-    let cur_port = args.iter().position(|arg| arg == "--port").and_then(|index| args.get(index + 1)).unwrap();
+    let cur_port = match args.iter().position(|arg| arg == "--port") {
+        Some(index) => args.get(index + 1).unwrap(),
+        None => "6379",
+    };
     let is_master;
     let master_port = match args.iter().position(|arg| arg == "--replicaof") {
         Some(index) => {
