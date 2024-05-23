@@ -1,5 +1,5 @@
 use std::env;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::{io::AsyncWriteExt, net::{TcpListener, TcpStream}};
 use resp::{RespHandler, Value};
 use anyhow::Result;
 use crate::{info::get_info, storage::Storage};
@@ -21,7 +21,15 @@ async fn main() {
     let master_port = match args.iter().position(|arg| arg == "--replicaof") {
         Some(index) => {
             is_master = false;
-            args.get(index + 1).unwrap().split(' ').collect::<Vec<&str>>()[1]
+
+            let mport_params = args.get(index + 1).unwrap().split(' ').collect::<Vec<&str>>();
+            let (host, mport) = (mport_params[0], mport_params[1]);
+
+            let mut hand_shake = TcpStream::connect(format!("{}:{}", host, mport)).await.expect("Unable to connect master port");
+
+            hand_shake.write_all(b"*1\r\n$4\r\nping\r\n").await.expect("Handshake 1 failed");
+
+            mport
         },
         None => {
             is_master = true;
