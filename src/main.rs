@@ -1,3 +1,4 @@
+use std::env;
 use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
@@ -9,9 +10,23 @@ mod storage;
 async fn main() {
     println!("Logs from your program will appear here!");
 
-    let port = std::env::args().nth(2).unwrap_or("6379".to_string());
+    let args = env::args().collect::<Vec<String>>();
+    let cur_port = args.iter().position(|arg| arg == "--port").and_then(|index| args.get(index + 1)).unwrap();
+    let is_master;
+    let master_port = match args.iter().position(|arg| arg == "--replicaof") {
+        Some(index) => {
+            is_master = false;
+            args.get(index + 1).unwrap()
+        },
+        None => {
+            is_master = true;
+            cur_port
+        },
+    };
+    println!("Current port:{}", cur_port);
+    println!("Master port:{}", master_port);
 
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await.unwrap();
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", cur_port)).await.unwrap();
     
     loop {
         let stream = listener.accept().await;
@@ -19,7 +34,7 @@ async fn main() {
             Ok((stream, _)) => {
                 println!("Get new connection!");
                 tokio::spawn(async move {
-                    handle_conn(stream).await;
+                    handle_conn(stream, is_master).await;
                 });
             }
             Err(e) => {
@@ -29,7 +44,7 @@ async fn main() {
     }
 }
 
-async fn handle_conn(stream: TcpStream) {
+async fn handle_conn(stream: TcpStream, is_master: bool) {
     let mut handler = RespHandler::new(stream);
 
     println!("Start reading loop!");
@@ -54,7 +69,7 @@ async fn handle_conn(stream: TcpStream) {
                     }
                 },
                 "get" => storage.get(unpack_bulk_str(args[0].clone()).unwrap()),
-                "info" => Value::BulkString("role:master".to_string()),
+                "info" => Value::BulkString(format!("role:{}", if is_master {"master"} else {"slave"}).to_string()),
                 _ => panic!("Can not handle command {}", command),
             }
         } else { break;};
