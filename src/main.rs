@@ -43,17 +43,18 @@ async fn handle_conn(stream: TcpStream) {
 
         let response = if let Some(v) = value {
             let (command, args) = extract_command(v).unwrap();
-            match command.as_str() {
-                "PING" => Value::SimpleString("PONG".to_string()),
-                "ECHO" => args.first().unwrap().clone(),
-                "SET" => {
+            match command.to_ascii_lowercase().as_str() {
+                "ping" => Value::SimpleString("PONG".to_string()),
+                "echo" => args.first().unwrap().clone(),
+                "set" => {
                     match args.len() {
                         2 => storage.set(unpack_bulk_str(args[0].clone()).unwrap(), unpack_bulk_str(args[1].clone()).unwrap(), 0),
                         4 => storage.set(unpack_bulk_str(args[0].clone()).unwrap(), unpack_bulk_str(args[1].clone()).unwrap(), unpack_bulk_str(args[3].clone()).unwrap().parse().unwrap()),
                         _ => panic!("SET command has invalid params {}", args.len()),
                     }
                 },
-                "GET" => storage.get(unpack_bulk_str(args[0].clone()).unwrap()),
+                "get" => storage.get(unpack_bulk_str(args[0].clone()).unwrap()),
+                "info" => Value::BulkString("role:master".to_string()),
                 _ => panic!("Can not handle command {}", command),
             }
         } else { break;};
