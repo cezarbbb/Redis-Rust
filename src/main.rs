@@ -19,7 +19,7 @@ async fn main() {
     let master_port = match args.iter().position(|arg| arg == "--replicaof") {
         Some(index) => {
             is_master = false;
-            args.get(index + 1).unwrap()
+            args.get(index + 1).unwrap().split(' ').collect::<Vec<&str>>()[1]
         },
         None => {
             is_master = true;
