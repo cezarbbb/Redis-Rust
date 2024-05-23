@@ -15,6 +15,13 @@ impl Value {
         match self {
             Value::SimpleString(s) => format!("+{}\r\n", s),
             Value::BulkString(s) => format!("${}\r\n{}\r\n", s.chars().count(), s),
+            Value::Array(s) => {
+                let mut sentence = format!("*{}\r\n", s.len());
+                for item in s {
+                    sentence += item.serialize().as_str();
+                }
+                sentence
+            },
             Value::Null => format!("$-1\r\n"),
             _ => panic!("Unsupported value for serialize!"),
         }

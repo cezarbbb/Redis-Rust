@@ -43,7 +43,9 @@ pub async fn send_hand_shake(host: String, master_port_id: String, cur_port_id: 
             
     let mut hand_shake = TcpStream::connect(format!("{}:{}", host, master_port_id)).await.expect("Unable to connect master port");
 
-    hand_shake.write(b"*1\r\n$4\r\nping\r\n").await.expect("Handshake 1 failed");
+    let hs_1 = Value::Array(vec![Value::BulkString("PING".to_string())]);
+    
+    hand_shake.write(hs_1.serialize().as_bytes()).await.expect("Handshake 1 failed");
     hand_shake.flush().await.unwrap();
 
     hand_shake.write(format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n{}\r\n", cur_port_id).as_bytes()).await.expect("Handshake 1/2 failed");
