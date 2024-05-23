@@ -1,54 +1,46 @@
 use std::env;
-use tokio::{io::AsyncWriteExt, net::{TcpListener, TcpStream}};
+use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
-use crate::{info::get_info, storage::Storage};
+use crate::{info::get_info, storage::Storage, port::{Port, PortType, send_hand_shake}};
 
 mod resp;
 mod storage;
 mod info;
+mod port;
 
 #[tokio::main]
 async fn main() {
     println!("Logs from your program will appear here!");
 
     let args = env::args().collect::<Vec<String>>();
-    let cur_port = match args.iter().position(|arg| arg == "--port") {
+    let cur_port_id = match args.iter().position(|arg| arg == "--port") {
         Some(index) => args.get(index + 1).unwrap(),
         None => "6379",
     };
-    let is_master;
+    let (cur_port, master_port);
     let master_port = match args.iter().position(|arg| arg == "--replicaof") {
         Some(index) => {
-            is_master = false;
-
             let mport_params = args.get(index + 1).unwrap().split(' ').collect::<Vec<&str>>();
             let (host, mport) = (mport_params[0], mport_params[1]);
 
-            println!("Start handshake with master port!");
-            
-            let mut hand_shake = TcpStream::connect(format!("{}:{}", host, mport)).await.expect("Unable to connect master port");
+            master_port = Port::new(mport.to_string(), PortType::Master);
+            cur_port = Port::new(cur_port_id.to_string().clone(), PortType::Slave);
 
-            hand_shake.write_all(b"*1\r\n$4\r\nping\r\n").await.expect("Handshake 1 failed");
-            hand_shake.flush().await.unwrap();
+            send_hand_shake(host.to_string(), master_port.id.clone(), cur_port.id.clone()).await;
 
-            hand_shake.write_all(format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n{}\r\n", cur_port).as_bytes()).await.expect("Handshake 1/2 failed");
-            hand_shake.flush().await.unwrap();
-
-            hand_shake.write_all(b"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n").await.expect("Handshake 2/2 failed");
-            hand_shake.flush().await.unwrap();
-
-            mport
+            master_port
         },
         None => {
-            is_master = true;
-            cur_port
+            master_port = Port::new(cur_port_id.to_string().clone(), PortType::Master);
+            cur_port = Port::new(cur_port_id.to_string().clone(), PortType::Master);
+            master_port
         },
     };
-    println!("Current port:{}", cur_port);
-    println!("Master port:{}", master_port);
+    println!("Current port:{}", cur_port.id);
+    println!("Master port:{}", master_port.id);
 
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", cur_port)).await.unwrap();
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", cur_port.id)).await.unwrap();
     
     loop {
         let stream = listener.accept().await;
@@ -56,7 +48,10 @@ async fn main() {
             Ok((stream, _)) => {
                 println!("Get new connection!");
                 tokio::spawn(async move {
-                    handle_conn(stream, is_master).await;
+                    handle_conn(stream, match cur_port.port_type {
+                        PortType::Master => true,
+                        PortType::Slave => false,
+                    }).await;
                 });
             }
             Err(e) => {
