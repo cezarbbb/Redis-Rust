@@ -46,12 +46,12 @@ pub async fn send_hand_shake(host: String, master_port_id: String, cur_port_id: 
     let hs_1 = Value::Array(vec![Value::BulkString("PING".to_string())]);
     
     hand_shake.write(hs_1.serialize().as_bytes()).await.expect("Handshake 1 failed");
-    hand_shake.flush().await.unwrap();
+    // hand_shake.flush().await.unwrap();
 
     let hs_2 = Value::Array(vec![Value::BulkString("REPLCONF".to_string()), Value::BulkString("listening-port".to_string()), Value::BulkString(format!("{}", cur_port_id).to_string())]);
     hand_shake.write(hs_2.serialize().as_bytes()).await.expect("Handshake 1/2 failed");
-    hand_shake.flush().await.unwrap();
+    // hand_shake.flush().await.unwrap();
 
     hand_shake.write(b"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n").await.expect("Handshake 2/2 failed");
-    hand_shake.flush().await.unwrap();
+    // hand_shake.flush().await.unwrap();
 }
