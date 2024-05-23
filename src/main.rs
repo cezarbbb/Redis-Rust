@@ -30,10 +30,13 @@ async fn main() {
             let mut hand_shake = TcpStream::connect(format!("{}:{}", host, mport)).await.expect("Unable to connect master port");
 
             hand_shake.write_all(b"*1\r\n$4\r\nping\r\n").await.expect("Handshake 1 failed");
+            hand_shake.flush().await.unwrap();
 
             hand_shake.write_all(format!("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n{}\r\n", cur_port).as_bytes()).await.expect("Handshake 1/2 failed");
+            hand_shake.flush().await.unwrap();
 
             hand_shake.write_all(b"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n").await.expect("Handshake 2/2 failed");
+            hand_shake.flush().await.unwrap();
 
             mport
         },
