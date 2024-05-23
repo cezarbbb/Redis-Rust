@@ -25,6 +25,8 @@ async fn main() {
             let mport_params = args.get(index + 1).unwrap().split(' ').collect::<Vec<&str>>();
             let (host, mport) = (mport_params[0], mport_params[1]);
 
+            println!("Start handshake with master port!");
+            
             let mut hand_shake = TcpStream::connect(format!("{}:{}", host, mport)).await.expect("Unable to connect master port");
 
             hand_shake.write_all(b"*1\r\n$4\r\nping\r\n").await.expect("Handshake 1 failed");
