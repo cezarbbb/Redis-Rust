@@ -7,12 +7,11 @@ mod storage;
 
 #[tokio::main]
 async fn main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
 
-    // Uncomment this block to pass the first stage
-    //
-    let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
+    let port = std::env::args().nth(2).unwrap_or("6379".to_string());
+
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await.unwrap();
     
     loop {
         let stream = listener.accept().await;
@@ -64,18 +63,6 @@ async fn handle_conn(stream: TcpStream) {
         handler.write_value(response).await.unwrap();
     }
 }
-
-// fn set(storage: &mut HashMap<String, String>, key: String, value: String) -> Value {
-//     storage.insert(key, value);
-//     Value::SimpleString("OK".to_string())
-// }
-
-// fn get(storage: & HashMap<String, String>, key: String) -> Value {
-//     match storage.get(& key) {
-//         Some(value) => Value::SimpleString(value.clone()),
-//         None => Value::Null,
-//     }
-// }
 
 fn extract_command(value: Value) -> Result<(String, Vec<Value>)> {
     match value {
