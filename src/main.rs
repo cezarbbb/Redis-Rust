@@ -2,12 +2,13 @@ use std::env;
 use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
-use crate::{info::get_info, storage::Storage, port::{Port, PortType, send_hand_shake}};
+use crate::{info::get_info, storage::Storage, port::{Port, PortType}};
 
 mod resp;
 mod storage;
 mod info;
 mod port;
+mod handshake;
 
 #[tokio::main]
 async fn main() {
@@ -27,7 +28,7 @@ async fn main() {
             master_port = Port::new(mport.to_string(), PortType::Master);
             cur_port = Port::new(cur_port_id.to_string().clone(), PortType::Slave);
 
-            send_hand_shake(host.to_string(), master_port.id.clone(), cur_port.id.clone()).await;
+            handshake::send_hand_shake(host.to_string(), master_port.id.clone(), cur_port.id.clone()).await;
 
             master_port
         },
@@ -78,6 +79,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
             match command.to_ascii_lowercase().as_str() {
                 "ping" => Value::SimpleString("PONG".to_string()),
                 "replconf" => Value::SimpleString("OK".to_string()),
+                "psync" => Value::SimpleString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0".to_string()),
                 "echo" => args.first().unwrap().clone(),
                 "set" => {
                     match args.len() {

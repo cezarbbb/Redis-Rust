@@ -23,7 +23,6 @@ impl Value {
                 sentence
             },
             Value::Null => format!("$-1\r\n"),
-            _ => panic!("Unsupported value for serialize!"),
         }
     }
 }
