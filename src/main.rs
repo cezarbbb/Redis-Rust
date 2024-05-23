@@ -2,9 +2,11 @@ use std::env;
 use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
-use crate::storage::Storage;
+use crate::{info::get_info, storage::Storage};
+
 mod resp;
 mod storage;
+mod info;
 
 #[tokio::main]
 async fn main() {
@@ -72,7 +74,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
                     }
                 },
                 "get" => storage.get(unpack_bulk_str(args[0].clone()).unwrap()),
-                "info" => Value::BulkString(format!("role:{}", if is_master {"master"} else {"slave"}).to_string()),
+                "info" => get_info(is_master),
                 _ => panic!("Can not handle command {}", command),
             }
         } else { break;};
