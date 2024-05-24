@@ -71,6 +71,7 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
                 },
                 "echo" => args.first().unwrap().clone(),
                 "set" => {
+                    let _ = sender.send(command_propagate.clone());
                     match args.len() {
                         2 => db.lock().await.set(unpack_bulk_str(args[0].clone()).unwrap(), unpack_bulk_str(args[1].clone()).unwrap(), 0),
                         4 => db.lock().await.set(unpack_bulk_str(args[0].clone()).unwrap(), unpack_bulk_str(args[1].clone()).unwrap(), unpack_bulk_str(args[3].clone()).unwrap().parse().unwrap()),
@@ -101,7 +102,7 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
             }
         }
 
-        let _ = sender.send(command_propagate.clone());
+        // let _ = sender.send(command_propagate.clone());
     }
 }
 
