@@ -1,58 +1,34 @@
-use std::env;
-use tokio::net::{TcpListener, TcpStream};
+use std::sync::Arc;
+use server::RedisServer;
+use tokio::{net::{TcpListener, TcpStream}, sync::Mutex};
 use resp::{RespHandler, Value};
 use anyhow::Result;
-use crate::{command_response::{get_info, handle_psync}, storage::Storage, port::{Port, PortType}};
+use crate::{command_response::handle_psync, storage::Storage, config::Config};
 
 mod resp;
 mod storage;
 mod command_response;
-mod port;
-mod handshake;
+mod config;
+mod server;
 
 #[tokio::main]
 async fn main() {
-    println!("Logs from your program will appear here!");
+    let config = Config::parse();
+    let database = Arc::new(Mutex::new(Storage::default()));
+    let redis_server = Arc::new(RedisServer::new(config, database));
 
-    let args = env::args().collect::<Vec<String>>();
-    let cur_port_id = match args.iter().position(|arg| arg == "--port") {
-        Some(index) => args.get(index + 1).unwrap(),
-        None => "6379",
-    };
-    let (cur_port, master_port);
-    let master_port = match args.iter().position(|arg| arg == "--replicaof") {
-        Some(index) => {
-            let mport_params = args.get(index + 1).unwrap().split(' ').collect::<Vec<&str>>();
-            let (host, mport) = (mport_params[0], mport_params[1]);
+    redis_server.connect_to_master().await;
 
-            master_port = Port::new(mport.to_string(), PortType::Master);
-            cur_port = Port::new(cur_port_id.to_string().clone(), PortType::Slave);
-
-            handshake::send_hand_shake(host.to_string(), master_port.id.clone(), cur_port.id.clone()).await;
-
-            master_port
-        },
-        None => {
-            master_port = Port::new(cur_port_id.to_string().clone(), PortType::Master);
-            cur_port = Port::new(cur_port_id.to_string().clone(), PortType::Master);
-            master_port
-        },
-    };
-    println!("Current port:{}", cur_port.id);
-    println!("Master port:{}", master_port.id);
-
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", cur_port.id)).await.unwrap();
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", &redis_server.config.port)).await.unwrap();
     
     loop {
         let stream = listener.accept().await;
+        let server = Arc::clone(&redis_server);
         match stream {
             Ok((stream, _)) => {
                 println!("Get new connection!");
                 tokio::spawn(async move {
-                    handle_conn(stream, match cur_port.port_type {
-                        PortType::Master => true,
-                        PortType::Slave => false,
-                    }).await;
+                    handle_conn(stream, server).await;
                 });
             }
             Err(e) => {
@@ -62,7 +38,7 @@ async fn main() {
     }
 }
 
-async fn handle_conn(stream: TcpStream, is_master: bool) {
+async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>) {
     let mut handler = RespHandler::new(stream);
 
     println!("Start reading loop!");
@@ -94,7 +70,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
                     }
                 },
                 "get" => storage.get(unpack_bulk_str(args[0].clone()).unwrap()),
-                "info" => get_info(is_master),
+                "info" => redis_server.info.get_info(),
                 _ => panic!("Can not handle command {}", command),
             }
         } else { break;};
