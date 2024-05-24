@@ -104,7 +104,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
         handler.write_value(response).await.unwrap();
 
         if if_send_rdb {
-            handler.write_value(Value::RDBString("empty rdb file".to_string())).await.unwrap();
+            handler.write_value(Value::RDBString("".to_string())).await.unwrap();
         }
     }
 }
