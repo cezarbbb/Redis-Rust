@@ -25,7 +25,7 @@ impl Value {
                 sentence
             },
             Value::RDBString(s) => {
-                let s_hex = hex::decode(s).expect("Failed to decode as hex string");
+                let s_hex = hex::decode(s.as_str()).expect("Failed to decode as hex string");
                 format!("${}\r\n{:?}", s_hex.len(), s_hex)
             }
             Value::Null => format!("$-1\r\n"),
