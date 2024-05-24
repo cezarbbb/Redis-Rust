@@ -43,7 +43,12 @@ impl Config {
         config.replicaof = match args.iter().position(|arg| arg == "--replicaof") {
             Some(index) => {
                 let mport_params = args.get(index + 1).unwrap().split(' ').collect::<Vec<&str>>();
-                Some(format!("{}:{}", mport_params[0], mport_params[1]))
+                let host = if mport_params[0] == "localhost" {
+                    "127.0.0.1"
+                } else {
+                    mport_params[0]
+                };
+                Some(format!("{}:{}", host, mport_params[1]))
             },
             None => None,
         };
