@@ -65,8 +65,6 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
                 "ping" => Value::SimpleString("PONG".to_string()),
                 "replconf" => Value::SimpleString("OK".to_string()),
                 "psync" => {
-                    handler.write_rdb_file("524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2").await.unwrap();
-
                     let mut receiver = sender.subscribe();
                         while let Ok(f) = receiver.recv().await {
                         println!("receiver receive {:?}", &f);
@@ -97,9 +95,9 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
 
         handler.write_value(response.clone()).await.unwrap();
 
-        // if if_send_rdb {
-        //     handler.write_rdb_file("524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2").await.unwrap();
-        // }
+        if if_send_rdb {
+            handler.write_rdb_file("524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2").await.unwrap();
+        }
         
         // if if_subscribe {
         //     let mut receiver = sender.subscribe();
