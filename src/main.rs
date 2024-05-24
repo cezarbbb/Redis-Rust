@@ -1,5 +1,5 @@
 use std::env;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::{io::AsyncWriteExt, net::{TcpListener, TcpStream}};
 use resp::{RespHandler, Value};
 use anyhow::Result;
 use crate::{command_response::{get_info, handle_psync}, storage::Storage, port::{Port, PortType}};
@@ -74,12 +74,17 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
         
         println!("Got value {:?}", value);
 
+        let mut if_send_rdb = false;
+
         let response = if let Some(v) = value {
             let (command, args) = extract_command(v).unwrap();
             match command.to_ascii_lowercase().as_str() {
                 "ping" => Value::SimpleString("PONG".to_string()),
                 "replconf" => Value::SimpleString("OK".to_string()),
-                "psync" => handle_psync(),
+                "psync" => {
+                    if_send_rdb = true;
+                    handle_psync()
+                },
                 "echo" => args.first().unwrap().clone(),
                 "set" => {
                     match args.len() {
@@ -97,6 +102,10 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
         println!("Sending value {:?}", response);
 
         handler.write_value(response).await.unwrap();
+
+        if if_send_rdb {
+            handler.write_value(Value::RDBString("empty rdb file".to_string())).await.unwrap();
+        }
     }
 }
 

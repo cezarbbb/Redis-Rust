@@ -1,12 +1,14 @@
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpStream};
 use bytes::BytesMut;
 use anyhow::Result;
+use hex;
 
 #[derive(Clone, Debug)]
 pub enum Value {
     SimpleString(String),
     BulkString(String),
     Array(Vec<Value>),
+    RDBString(String),
     Null,
 }
 
@@ -22,6 +24,10 @@ impl Value {
                 }
                 sentence
             },
+            Value::RDBString(s) => {
+                let s_hex = hex::decode(s).expect("Failed to decode as hex string");
+                format!("${}\r\n{:?}", s_hex.len(), s_hex)
+            }
             Value::Null => format!("$-1\r\n"),
         }
     }
