@@ -94,6 +94,7 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
         if if_subscribe {
             let mut receiver = sender.subscribe();
             while let Ok(_) = receiver.recv().await {
+                print!("receiver receive {:?}", &response);
                 handler.write_value(response.clone()).await.unwrap();
             }
         }
