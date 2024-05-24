@@ -26,7 +26,7 @@ impl Value {
             },
             Value::RDBString(s) => {
                 let s_hex = hex::decode(s).expect("Failed to decode as hex string");
-                format!("${}\r\n{:?}", s_hex.len(), s_hex)
+                format!("${}\r\n", s_hex.len())
             }
             Value::Null => format!("$-1\r\n"),
         }
@@ -54,6 +54,12 @@ impl RespHandler {
 
     pub async fn write_value(&mut self, value: Value) -> Result<()> {
         self.stream.write(value.serialize().as_bytes()).await?;
+        Ok(())
+    }
+
+    pub async fn write_rdb_file(&mut self, rdb_file: &str) -> Result<()> {
+        self.stream.write(Value::RDBString(rdb_file.to_string()).serialize().as_bytes()).await?;
+        self.stream.write(hex::decode(rdb_file)?.as_slice()).await?;
         Ok(())
     }
 }
