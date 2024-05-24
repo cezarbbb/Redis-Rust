@@ -1,5 +1,5 @@
 use std::env;
-use tokio::{io::AsyncWriteExt, net::{TcpListener, TcpStream}};
+use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
 use crate::{command_response::{get_info, handle_psync}, storage::Storage, port::{Port, PortType}};
@@ -104,7 +104,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
         handler.write_value(response).await.unwrap();
 
         if if_send_rdb {
-            handler.write_value(Value::RDBString("".to_string())).await.unwrap();
+            handler.write_value(Value::RDBString("cezarbbb".to_string())).await.unwrap();
         }
     }
 }
