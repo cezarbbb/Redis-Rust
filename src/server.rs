@@ -20,6 +20,7 @@ pub struct Info {
 
 impl Info {
     pub fn new(config: &Config) -> Self {
+        println!("**************{:?}", &config.replicaof);
         Info {
             role: match config.replicaof {
                 Some(_) => Role::Slave,
