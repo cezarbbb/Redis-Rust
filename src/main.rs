@@ -104,7 +104,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
         handler.write_value(response).await.unwrap();
 
         if if_send_rdb {
-            handler.write_value(Value::RDBString("cezarbbb".to_string())).await.unwrap();
+            handler.write_value(Value::RDBString("111".to_string())).await.unwrap();
         }
     }
 }
