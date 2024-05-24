@@ -22,6 +22,7 @@ async fn main() {
     redis_server.connect_to_master().await;
 
     let listener = TcpListener::bind(format!("127.0.0.1:{}", &redis_server.config.port)).await.unwrap();
+    println!("Start listening 127.0.0.1:{}!", &redis_server.config.port);
     
     loop {
         let stream = listener.accept().await;
