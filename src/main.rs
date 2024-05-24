@@ -41,7 +41,7 @@ async fn main() {
     println!("Current port:{}", cur_port.id);
     println!("Master port:{}", master_port.id);
 
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", cur_port.id)).await.unwrap();
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", master_port.id)).await.unwrap();
     
     loop {
         let stream = listener.accept().await;
