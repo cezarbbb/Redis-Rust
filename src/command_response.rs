@@ -6,3 +6,7 @@ pub fn get_info(is_master: bool) -> Value {
     let master_repl_offset = "master_repl_offset:0\r\n";
     Value::BulkString(role + master_replid + master_repl_offset)
 }
+
+pub fn handle_psync() -> Value {
+    Value::SimpleString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0".to_string())
+}

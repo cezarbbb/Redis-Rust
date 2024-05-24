@@ -2,11 +2,11 @@ use std::env;
 use tokio::net::{TcpListener, TcpStream};
 use resp::{RespHandler, Value};
 use anyhow::Result;
-use crate::{info::get_info, storage::Storage, port::{Port, PortType}};
+use crate::{command_response::{get_info, handle_psync}, storage::Storage, port::{Port, PortType}};
 
 mod resp;
 mod storage;
-mod info;
+mod command_response;
 mod port;
 mod handshake;
 
@@ -79,7 +79,7 @@ async fn handle_conn(stream: TcpStream, is_master: bool) {
             match command.to_ascii_lowercase().as_str() {
                 "ping" => Value::SimpleString("PONG".to_string()),
                 "replconf" => Value::SimpleString("OK".to_string()),
-                "psync" => Value::SimpleString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0".to_string()),
+                "psync" => handle_psync(),
                 "echo" => args.first().unwrap().clone(),
                 "set" => {
                     match args.len() {
