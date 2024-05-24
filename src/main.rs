@@ -99,7 +99,7 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
             }
         }
 
-        // let _ = sender.send(response);
+        let _ = sender.send(response);
     }
 }
 
