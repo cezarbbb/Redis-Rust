@@ -94,12 +94,12 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
         
         if if_subscribe {
             let mut receiver = sender.subscribe();
-            while let Ok(_) = receiver.recv().await {
-                handler.write_value(command_propagate.clone()).await.unwrap();
+            while let Ok(f) = receiver.recv().await {
+                handler.write_value(f).await.unwrap();
             }
         }
 
-        let _ = sender.send(response);
+        let _ = sender.send(command_propagate.clone());
     }
 }
 
