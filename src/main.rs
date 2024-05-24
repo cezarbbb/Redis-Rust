@@ -101,7 +101,7 @@ async fn handle_conn(stream: TcpStream, redis_server: Arc<RedisServer>, sender: 
             }
         }
 
-        let _ = sender.send(command_propagate.clone());
+        sender.send(command_propagate.clone());
     }
 }
 
