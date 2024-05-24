@@ -36,19 +36,29 @@ impl Config {
     pub fn parse() -> Self {
         let args = env::args().collect::<Vec<String>>();
         let mut config = Config::new();
-        for (index, arg) in args.iter().enumerate() {
-            if arg == "--port" {
-                if let Some(port) = args.get(index + 1) {
-                    config.port = port.to_owned();
-                }
-            }
+        
+        config.port = match args.iter().position(|arg| arg == "--port") {
+            Some(index) => args.get(index + 1).unwrap().to_string(),
+            None => "6379".to_string(),
+        };
+        config.replicaof = match args.iter().position(|arg| arg == "--replicaof") {
+            Some(index) => Some(args.get(index + 1).unwrap().to_string()),
+            None => None,
+        };
+        println!("***********{}{:?}", &config.port, &config.replicaof);
+        // for (index, arg) in args.iter().enumerate() {
+        //     if arg == "--port" {
+        //         if let Some(port) = args.get(index + 1) {
+        //             config.port = port.to_owned();
+        //         }
+        //     }
 
-            if arg == "--replicaof" {
-                if let (Some(host), Some(port)) = (args.get(index + 1), args.get(index + 2)) {
-                    config.replicaof = Some(format!("{}:{}", host, port));
-                }
-            }
-        }
+        //     if arg == "--replicaof" {
+        //         if let (Some(host), Some(port)) = (args.get(index + 1), args.get(index + 2)) {
+        //             config.replicaof = Some(format!("{}:{}", host, port));
+        //         }
+        //     }
+        // }
 
         config
     }
