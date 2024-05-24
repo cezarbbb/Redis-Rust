@@ -7,7 +7,7 @@ use crate::resp::Value;
 use crate::storage::Storage;
 use crate::Config;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Role {
     Master,
     Slave,
@@ -56,6 +56,7 @@ impl RedisServer {
     }
 
     pub async fn connect_to_master(&self) {
+        println!("Role of port: {:?}", self.info.role);
         if self.info.role == Role::Slave {
             if let Some(replicaof) = &self.config.replicaof {
                     Self::send_hand_shake(replicaof, &self.config.port).await;
